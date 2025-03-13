@@ -3,34 +3,75 @@
     text-align: center;
 }
 /* Body background and font */
-body {
-    background-color: #404042;
+.background {
+    position: fixed;
+    background-image: url(/src/assets/background.png);
+    background-size: cover; /* Ensures the image covers the entire screen */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents repeating */
+    height: 100vh; /* Ensures the body fills the full viewport */
+    width: 100vw;
+    filter: blur(3px);
+    z-index: -1;
+}
+.content{
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 90vh;
+    height: 100vh;
     flex-direction: column;
-
+    margin: 0;
+    padding: 0;
 }
 h1 {
-    margin: 50px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1.5vw 1.5vh;
+    border-radius: 20px;
+    margin-top: 3vw;
+    margin-bottom: 1vw;
     font-family: impact, sans-serif;
-    font-size: 80px;
+    font-size: calc(2.2vh + 2.2vw);
     color: rgba(217, 170, 82, 1);
     opacity: 0;
     animation: fadeIn 3 ease-in forwards;
 
 }
 
+h2 {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1.0vw 1.0vh;
+    border-radius: 20px;
+    margin: 1vw;
+    font-family: impact, sans-serif;
+    font-size: calc(2vh + 2vw);
+    color: rgba(217, 170, 82, 1);
+    opacity: 0;
+    animation: fadeIn 3 ease-in forwards;
+
+}
+
+h3 {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1.5vw 1.5vh;
+    border-radius: 20px;
+    margin: 0vw;
+    font-family: impact, sans-serif;
+    font-size: calc(1vh + 1vw);
+    color: rgba(217, 170, 82, 1);
+    opacity: 0;
+    animation: fadeIn 3 ease-in forwards;
+}
+
 .fade-in {
-    width: 600px;
-    height: 400px;
+    width: 35vw;
+    height: auto;
     border-radius: 20%;
     margin-bottom: 0px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
+    padding: 1vh 1vw;
     transition: transform 0.5s ease;
     opacity: 0;
     animation: fadeIn 3s ease-in forwards;
@@ -39,7 +80,7 @@ h1 {
 /* Hover Effect for Links */
 .fade-in:hover {
     cursor: pointer;
-    transform: scale(1.2);
+    transform: scale(1.1);
 }
 .fade-text {
     opacity: 0;
