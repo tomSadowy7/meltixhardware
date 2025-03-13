@@ -26,12 +26,12 @@
 }
 h1 {
     background: rgba(0, 0, 0, 0.7);
-    padding: 1.5vw 1.5vh;
+    padding: 2vw 2vh;
     border-radius: 20px;
-    margin-top: 3vw;
-    margin-bottom: 1vw;
+    margin-top: 0.5vw;
+    margin-bottom: 5vw;
     font-family: impact, sans-serif;
-    font-size: calc(2.2vh + 2.2vw);
+    font-size: calc(1.5vh + 1.5vw);
     color: rgba(217, 170, 82, 1);
     opacity: 0;
     animation: fadeIn 3 ease-in forwards;
@@ -44,7 +44,7 @@ h2 {
     border-radius: 20px;
     margin: 1vw;
     font-family: impact, sans-serif;
-    font-size: calc(2vh + 2vw);
+    font-size: calc(1vh + 1vw);
     color: rgba(217, 170, 82, 1);
     opacity: 0;
     animation: fadeIn 3 ease-in forwards;
@@ -53,7 +53,7 @@ h2 {
 
 h3 {
     background: rgba(0, 0, 0, 0.7);
-    padding: 1.5vw 1.5vh;
+    padding: 1vw 1vh;
     border-radius: 20px;
     margin: 0vw;
     font-family: impact, sans-serif;
@@ -64,7 +64,7 @@ h3 {
 }
 
 .fade-in {
-    width: 35vw;
+    width: 40vw;
     height: auto;
     border-radius: 20%;
     margin-bottom: 0px;
@@ -80,7 +80,7 @@ h3 {
 /* Hover Effect for Links */
 .fade-in:hover {
     cursor: pointer;
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 .fade-text {
     opacity: 0;
