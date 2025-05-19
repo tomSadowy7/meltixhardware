@@ -1,12 +1,15 @@
-import requests
 import time
+import requests
 
-url = "http://192.168.68.52/flash"
+url = "http://esp32-1.local/flash"
+data = {"key": "123456"}
 
 while True:
     try:
-        response = requests.get(url)
+        response = requests.post(url, json=data)
         print(f"Response: {response.text}")
     except requests.RequestException as e:
         print(f"Request failed: {e}")
-    time.sleep(5)
+    time.sleep(0.5)
+
+
