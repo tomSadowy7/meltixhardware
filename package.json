@@ -1,0 +1,19 @@
+{
+  "name": "meltixhardware",
+  "version": "1.0.0",
+  "description": "On Client Side (Raspberrypi 4):\r 1.) Open terminal\r 2.) Write 'ssh admin@raspberrypi.local' and press Enter\r 3.) Type in Password and press Enter\r 4.) Write 'python client.py' and press Enter",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomSadowy7/meltixhardware.git"
+  },
+  "author": "Sean Bautista, Tomasz Sadowy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tomSadowy7/meltixhardware/issues"
+  },
+  "homepage": "https://github.com/tomSadowy7/meltixhardware#readme"
+}
