@@ -1,0 +1,1 @@
+scp send_wifi_ble.py admin@raspberrypi.local:/home/admin/
