@@ -1,68 +1,65 @@
 const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
 const bodyParser = require('body-parser');
-const net = require('net');
 
 const app = express();
 app.use(bodyParser.json());
 
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
 const AUTH_KEY = '123456';
 let piSocket = null;
-let buffer = "";
 
-// Create socket server for Raspberry Pi
-const socketServer = net.createServer((socket) => {
-  console.log('🔔 Incoming socket connection');
-  let authBuffer = '';
+// WebSocket handler
+wss.on('connection', (ws) => {
+  console.log('📡 WebSocket client connected');
 
-  const onAuthData = (data) => {
-    authBuffer += data.toString();
-    if (authBuffer.includes('\n')) {
-      const [raw] = authBuffer.split('\n');
-      try {
-        const msg = JSON.parse(raw.trim());
-        if (msg.key === AUTH_KEY) {
-          console.log('✅ Raspberry Pi authenticated');
-          piSocket = socket;
-          buffer = "";
-
-          socket.off('data', onAuthData);
-
-          socket.on('data', (data) => {
-            buffer += data.toString();
-            const parts = buffer.split('\n');
-            buffer = parts.pop();
-            for (const msg of parts) {
-              console.log('📩 From Pi:', msg.trim());
-            }
-          });
-
-          socket.on('end', () => {
-            console.log('⚠️ Raspberry Pi disconnected');
-            piSocket = null;
-          });
-
-          socket.on('error', (err) => {
-            console.error('❌ Socket error:', err.message);
-            piSocket = null;
-          });
-        } else {
-          console.log('🚫 Invalid auth key — closing connection');
-          socket.destroy();
-        }
-      } catch (e) {
-        console.log('❌ Invalid JSON — closing connection');
-        socket.destroy();
+  ws.on('message', (msg) => {
+    try {
+      const data = JSON.parse(msg);
+      if (data.key === AUTH_KEY) {
+        console.log('✅ Authenticated Pi');
+        piSocket = ws;
+      } else {
+        console.warn('🚫 Invalid key');
+        ws.close();
       }
+    } catch {
+      console.warn('❌ Invalid JSON');
+      ws.close();
     }
-  };
+  });
 
-  socket.on('data', onAuthData);
+  ws.on('close', () => {
+    if (ws === piSocket) {
+      console.log('⚠️ Pi disconnected');
+      piSocket = null;
+    }
+  });
 });
 
-socketServer.listen(9000, () => {
-  console.log('🔌 Socket server listening on port 9000');
+// HTTP API
+app.post('/turnOn', (req, res) => {
+  const { number, key } = req.body;
+  if (![1, 2, 3, 4].includes(number) || key !== AUTH_KEY) {
+    return res.status(400).json({ error: 'Invalid input' });
+  }
+  if (piSocket) piSocket.send(JSON.stringify({ command: 'turnOn', number, key }));
+  res.json({ status: 'Sent turnOn' });
 });
 
-// Send command to Pi
-function sendCommandToPi(command, number, key) {
-  if (!piSocket) return console.error('⚠️ Raspberry Pi not connected'
+app.post('/turnOff', (req, res) => {
+  const { number, key } = req.body;
+  if (![1, 2, 3, 4].includes(number) || key !== AUTH_KEY) {
+    return res.status(400).json({ error: 'Invalid input' });
+  }
+  if (piSocket) piSocket.send(JSON.stringify({ command: 'turnOff', number, key }));
+  res.json({ status: 'Sent turnOff' });
+});
+
+// Start server on port 80 (Render default)
+server.listen(80, () => {
+  console.log('🚀 Server listening on port 80');
+});
