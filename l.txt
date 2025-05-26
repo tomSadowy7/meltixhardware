@@ -1,8 +1,0 @@
-Serial.println(WiFi.localIP());
-
-  // Initialize mDNS
-  if (!MDNS.begin("esp32-1")) {
-    Serial.println("Error setting up mDNS responder!");
-  } else {
-    Serial.println("mDNS responder started: esp32-1.local");
-  }
