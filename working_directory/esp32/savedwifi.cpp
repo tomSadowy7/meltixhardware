@@ -18,7 +18,7 @@ BLECharacteristic *statusChar;
 String receivedSSID = "", receivedPass = "";
 bool ssidReady = false, passReady = false;
 
-const int ledPins[4] = {33, 34, 35, 36};
+const int ledPins[4] = {16, 17, 18, 19};
 
 WebServer server(80);
 const char* correctKey = "123456";

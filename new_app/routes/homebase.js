@@ -1,0 +1,81 @@
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from '../authMiddleware.js';
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// Claim a HomeBase (user must be authenticated)
+// Claim or register a HomeBase
+router.post('/claim', authenticateToken, async (req, res) => {
+  const { homebaseId, name } = req.body;
+
+
+  console.log('Hit /claim endpoint');
+  if (!homebaseId) {
+    return res.status(400).json({ error: 'Missing homebaseId' });
+  }
+
+  try {
+    let homebase = await prisma.homeBase.findUnique({ where: { id: homebaseId } });
+
+    if (!homebase) {
+      // Create and assign to user
+      console.log('Creating HomeBase for userId:', req.userId);
+      homebase = await prisma.homeBase.create({
+        data: {
+          id: homebaseId,
+          name: name || `HomeBase ${homebaseId.slice(-4)}`,
+          userId: req.userId,
+        },
+      });
+    } else {
+      // Update ownership if needed
+      homebase = await prisma.homeBase.update({
+        where: { id: homebaseId },
+        data: { userId: req.userId },
+      });
+    }
+
+    res.json({ success: true, homeBase: homebase });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to claim or register HomeBase' });
+  }
+});
+router.get('/getname', authenticateToken, async (req, res) => {
+    console.log('\n=== HomeBase Name Request ===');
+    console.log('Authenticated User ID:', req.userId);
+    
+    try {
+        const homeBase = await prisma.homeBase.findUnique({
+            where: { userId: req.userId },
+            select: { name: true }
+        });
+
+        console.log('Database Query Result:', homeBase);
+
+        if (!homeBase) {
+            console.log('No HomeBase found for user');
+            return res.status(404).json({ 
+                success: false,
+                message: "No HomeBase associated with this account"
+            });
+        }
+
+        console.log('Returning HomeBase name:', homeBase.name);
+        res.json({
+            success: true,
+            hasHomeBase: true,
+            name: homeBase.name
+        });
+    } catch (error) {
+        console.error('Error in /getname:', error);
+        res.status(500).json({ 
+            success: false,
+            error: "Server error" 
+        });
+    }
+});
+
+export default router;

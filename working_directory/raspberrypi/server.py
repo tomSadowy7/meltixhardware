@@ -3,7 +3,8 @@ import websockets
 import json
 import requests
 
-BACKEND_WS = "ws://192.168.68.60"
+#BACKEND_WS = "ws://192.168.68.60"
+BACKEND_WS = "wss://meltix.onrender.com"
 ESP32_BASE_URL = "http://esp32-1.local"
 AUTH_KEY = "123456"
 
