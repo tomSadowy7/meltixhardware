@@ -38,8 +38,24 @@ def read_homebase_id():
 
 def connect_to_wifi(ssid, password):
     print(f"Connecting to SSID: {ssid}, Password: {password}")
-    # Replace with actual Wi-Fi logic
-    return ssid == "TestNetwork" and password == "correctpassword"
+    try:
+        # Remove old connection if it exists
+        subprocess.run(['nmcli', 'connection', 'delete', ssid], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Try to connect
+        result = subprocess.run(
+            ['nmcli', 'device', 'wifi', 'connect', ssid, 'password', password],
+            capture_output=True, text=True, timeout=20
+        )
+        if result.returncode == 0:
+            print("✅ Connected to WiFi successfully.")
+            return True
+        else:
+            print(f"❌ Failed to connect to WiFi: {result.stderr}")
+            return False
+    except Exception as e:
+        print(f"Error connecting to WiFi: {e}")
+        return False
+
 
 def claim_homebase(homebase_id, token):
     try:

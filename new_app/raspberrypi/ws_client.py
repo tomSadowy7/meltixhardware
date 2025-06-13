@@ -2,8 +2,9 @@ import asyncio
 import websockets
 import json
 import time
+import subprocess
 
-WEBSOCKET_URL = "ws://192.168.68.66:8081"  # CHANGE THIS to your backend's websocket URL/port
+WEBSOCKET_URL = "ws://192.168.1.127:8081"  # CHANGE THIS to your backend's websocket URL/port
 
 HOMEBASE_ID_FILE = "/etc/homebase-id"
 
@@ -24,7 +25,7 @@ async def connect_and_run():
                 # Identify yourself to the backend
                 hello_msg = json.dumps({
                     "type": "register",
-                    "homeBaseId": homebase_id
+                    "homebaseId": homebase_id
                 })
                 await ws.send(hello_msg)
                 print(f"[ws_client] Sent registration: {hello_msg}")
@@ -33,6 +34,14 @@ async def connect_and_run():
                     msg = await ws.recv()
                     print(f"[ws_client] Received from server: {msg}")
                     # Optionally, parse and act on commands here
+                    try:
+                        data = json.loads(msg)
+                        if data.get("type") == "start_provisioning":
+                            print("[ws_client] Starting BLE provisioning mode...")
+                            # You could start your BLE provisioning subprocess here!
+                            subprocess.Popen(['python3', '/home/admin/ble_provision.py'])
+                    except Exception as ex:
+                        print("[ws_client] Error processing message:", ex)
         except Exception as e:
             print(f"[ws_client] Connection lost or failed: {e}")
             print("[ws_client] Reconnecting in 5 seconds...")

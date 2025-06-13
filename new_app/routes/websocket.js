@@ -5,7 +5,7 @@ export const piSockets = new Map(); // homebaseId -> WebSocket
 
 // Listen on a PORT (not attached to your Express server)
 export function createPiWebSocketServer(port = 8081) {
-  const wss = new WebSocketServer({ port, path: '/' });
+  const wss = new WebSocketServer({ port});
 
   wss.on('connection', (ws, req) => {
     // Expect the Pi to send its homebaseId as the first message

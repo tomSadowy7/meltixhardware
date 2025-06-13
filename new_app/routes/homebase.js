@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../authMiddleware.js';
+import { piSockets } from './websocket.js'; // Or wherever it's exported
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -77,5 +78,37 @@ router.get('/getname', authenticateToken, async (req, res) => {
         });
     }
 });
+
+
+// New route to trigger Pi provisioning mode
+router.post('/start-device-provision', authenticateToken, async (req, res) => {
+  try {
+    // 1. Get the user's homebaseId from DB
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: { homebase: true }
+    });
+    if (!user?.homebase) {
+      return res.status(404).json({ error: 'No HomeBase for user' });
+    }
+
+    const homebaseId = user.homebase.id;
+
+    // 2. Find WebSocket for this homebase
+    const ws = piSockets.get(homebaseId);
+    if (!ws || ws.readyState !== ws.OPEN) {
+      return res.status(404).json({ error: 'HomeBase is offline' });
+    }
+
+    // 3. Send a message to the Pi
+    ws.send(JSON.stringify({ type: "start_provisioning" }));
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to trigger provisioning" });
+  }
+});
+
 
 export default router;
