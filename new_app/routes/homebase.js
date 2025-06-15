@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../authMiddleware.js';
-import { piSockets } from './websocket.js'; // Or wherever it's exported
+import { piSockets } from '../websockets/ws-pi.js'; // Or wherever it's exported
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -51,7 +51,10 @@ router.get('/getname', authenticateToken, async (req, res) => {
     try {
         const homeBase = await prisma.homeBase.findUnique({
             where: { userId: req.userId },
-            select: { name: true }
+            select: { 
+                name: true,
+                id: true // <-- ADD THIS
+            }
         });
 
         console.log('Database Query Result:', homeBase);
@@ -68,7 +71,8 @@ router.get('/getname', authenticateToken, async (req, res) => {
         res.json({
             success: true,
             hasHomeBase: true,
-            name: homeBase.name
+            name: homeBase.name,
+            id: homeBase.id
         });
     } catch (error) {
         console.error('Error in /getname:', error);
@@ -107,6 +111,33 @@ router.post('/start-device-provision', authenticateToken, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to trigger provisioning" });
+  }
+});
+
+
+// routes/homebase.js  (add after start-device-provision)
+router.post('/cancel-device-provision', authenticateToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: { homebase: true }
+    });
+    if (!user?.homebase) {
+      return res.status(404).json({ error: 'No HomeBase for user' });
+    }
+
+    const homebaseId = user.homebase.id;
+    const ws = piSockets.get(homebaseId);
+    if (!ws || ws.readyState !== ws.OPEN) {
+      return res.status(404).json({ error: 'HomeBase is offline' });
+    }
+
+    ws.send(JSON.stringify({ type: 'stop_provisioning' }));
+    console.log(`[WS] stop_provisioning sent to ${homebaseId}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to cancel provisioning' });
   }
 });
 

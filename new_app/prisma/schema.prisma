@@ -30,21 +30,21 @@ model HomeBase {
 }
 
 model Device {
-  id              String           @id @default(uuid())
-  name            String
-  type            String           // e.g. "sprinkler"
-  homeBase        HomeBase         @relation(fields: [homeBaseId], references: [id])
-  homeBaseId      String
-  sprinklerState  SprinklerState?
+  id          String  @id
+  name        String
+  type        String
+  lanName     String  //   <<< NEW
+  homeBase    HomeBase @relation(fields:[homeBaseId], references:[id])
+  homeBaseId  String
+  sprinklerState SprinklerState?
 }
 
 model SprinklerState {
-  id        String  @id @default(uuid())
-  device    Device  @relation(fields: [deviceId], references: [id])
-  deviceId  String  @unique
+  deviceId String @id                     // PK = FK
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
-  zone1     Boolean @default(false)
-  zone2     Boolean @default(false)
-  zone3     Boolean @default(false)
-  zone4     Boolean @default(false)
+  zone1 Boolean @default(false)
+  zone2 Boolean @default(false)
+  zone3 Boolean @default(false)
+  zone4 Boolean @default(false)
 }

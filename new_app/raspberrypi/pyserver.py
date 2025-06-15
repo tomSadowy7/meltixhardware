@@ -5,6 +5,7 @@ import time
 import threading
 import sys
 import subprocess
+import os, signal
 
 # UUIDs
 WIFI_SERVICE_UUID = '12345678-1234-5678-1234-56789abcdef0'
@@ -26,7 +27,7 @@ provisioning_in_progress = False
 notifications_enabled = False
 
 
-BACKEND_URL = "http://192.168.68.66:3001/homebase/claim"  # Update as needed
+BACKEND_URL = "http://192.168.68.69:3001/homebase/claim"  # Update as needed
 
 def read_homebase_id():
     try:
@@ -98,8 +99,12 @@ def try_connect():
         # ---- LAUNCH WEBSOCKET CLIENT AND EXIT ----
         if success:
             print("Provisioning successful. Launching websocket client...")
-            subprocess.Popen(['python3', '/home/admin/ws_client.py'])
-            sys.exit(0)  # Clean exit so BLE server stops here
+            #subprocess.Popen(['python3', '/home/admin/ws_client.py'])
+            #sys.exit(0)  # Clean exit so BLE server stops here
+            sys.stdout.flush(); sys.stderr.flush()
+
+            # TERMINATE **THIS** helper
+            os.execlp("python", "python", "/home/admin/ws_client.py")
 
     def claim_homebase_step():
         claimed = claim_homebase(homebase_id, user_token)
@@ -111,9 +116,21 @@ def try_connect():
     def wifi_success_step():
         wifi_ok = connect_to_wifi(wifi_ssid, wifi_password)
         if wifi_ok:
+            # --- Save Wi-Fi credentials to disk ---
+            try:
+                with open('/etc/wifi-ssid', 'w') as f:
+                    f.write(wifi_ssid)
+                with open('/etc/wifi-pass', 'w') as f:
+                    f.write(wifi_password)
+                print("WiFi credentials saved to /etc/wifi-ssid and /etc/wifi-pass")
+            except Exception as e:
+                print(f"Failed to save WiFi credentials: {e}")
+            # --- End save step ---
+
             send_status(0x02, "WiFi success", next_func=claim_homebase_step)()
         else:
             send_status(0x04, "WiFi failed", next_func=lambda: finish(False))()
+
 
     # Start the chain
     send_status(0x01, "WiFi connecting", next_func=wifi_success_step)()
@@ -142,7 +159,15 @@ def token_write_callback(value, options):
     global user_token
     user_token = bytes(value).decode('utf-8')
     print("Received User Token:", user_token)
+    # Save user token to persistent file
+    try:
+        with open('/etc/user-token', 'w') as f:
+            f.write(user_token)
+        print("User token saved to /etc/user-token")
+    except Exception as e:
+        print(f"Failed to save user token: {e}")
     maybe_try_connect()
+
 
 def notify_callback(notifying, characteristic):
     global notifications_enabled
@@ -157,7 +182,6 @@ def notify_callback(notifying, characteristic):
 
 def main(adapter_address):
     global status_characteristic, homebase_id_characteristic, homebase_id
-
     homebase_id = read_homebase_id()
 
     wifi = peripheral.Peripheral(adapter_address, local_name='WiFi Config', appearance=0x0200)

@@ -7,7 +7,11 @@ import { PrismaClient } from '@prisma/client';
 import homebaseRoutes from './routes/homebase.js';
 import authRoutes from './routes/auth.js';
 import deviceRoutes from './routes/device.js';
-import { createPiWebSocketServer } from './routes/websocket.js';
+import sprinklerRoutes from './routes/sprinkler.js';
+
+// --- Import both WS servers ---
+import { createPiWebSocketServer } from './websockets/ws-pi.js';
+import { createAppWebSocketServer } from './websockets/ws-app.js';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -21,10 +25,12 @@ app.use(express.json());
 app.use('/homebase', homebaseRoutes);
 app.use('/auth', authRoutes);
 app.use('/device', deviceRoutes);
+app.use('/sprinkler', sprinklerRoutes); // Assuming sprinkler routes are in device.js
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// Start the WebSocket server (on 8081, or choose another port)
-createPiWebSocketServer(8081);
+// Start WebSocket servers on separate ports
+createPiWebSocketServer(8081);   // Pi <-> Backend
+createAppWebSocketServer(8082);  // App <-> Backend
