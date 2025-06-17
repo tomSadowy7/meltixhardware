@@ -18,6 +18,15 @@ model User {
   zip       String
   createdAt DateTime   @default(now())
 
+
+  // New fields for email verification
+  isVerified Boolean   @default(false)
+  verificationCode String?
+
+  //for password reset 
+  resetCode         String?      // <-- ADD THIS
+  resetCodeExpires  DateTime?
+
   homebase  HomeBase?  // 👈 Add this inverse relation
 }
 
