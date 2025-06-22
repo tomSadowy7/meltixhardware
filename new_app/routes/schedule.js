@@ -49,9 +49,9 @@ router.get("/", authenticateToken, async (req, res) => {
     enabled   : s.enabled,
     rainGuard : s.rainGuard,
     deviceId  : s.deviceId,
-    slots     : s.slots.map(sl => ({
+    slots: s.slots.map(sl => ({
       id         : sl.id,
-      dow        : sl.dow,
+      days       : sl.days, // now an array
       start      : bucketToHHMM(sl.startBucket),
       durationMin: sl.bucketCount * 5,
       zones      : maskToZones(sl.zoneMask)
@@ -75,11 +75,11 @@ router.post("/", authenticateToken, async (req, res) => {
     }
 
     const slotData = slots.map((s) => ({
-      dow: s.dow,
-      startBucket: toBucket(s.start),
-      bucketCount: minsToBuckets(s.durationMin),
-      zoneMask: toMask(s.zones)
-    }));
+    days: s.days,                                 // ← CHANGE THIS LINE
+    startBucket: toBucket(s.start),
+    bucketCount: minsToBuckets(s.durationMin),
+    zoneMask: toMask(s.zones)
+  }));
 
     console.log("[POST /api/schedule] slotData:", slotData);
 
@@ -112,10 +112,10 @@ router.put("/:id", authenticateToken, async (req, res) => {
     console.log("[PUT /api/schedule] deleted old slots for schedule", req.params.id);
 
     const slotData = slots.map((s) => ({
-      dow: s.dow,
+      days: s.days, // now an array, e.g. [1, 3, 5]
       startBucket: toBucket(s.start),
       bucketCount: minsToBuckets(s.durationMin),
-      zoneMask: toMask(s.zones),
+      zoneMask: toMask(s.zones)
     }));
 
     console.log("[PUT /api/schedule] slotData:", slotData);

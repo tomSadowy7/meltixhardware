@@ -79,15 +79,15 @@ model Schedule {                                // one “program” the user to
   createdAt   DateTime @default(now())
 }
 
-model ScheduleSlot {                            // a single watering window
+model ScheduleSlot {
   id            String   @id @default(cuid())
   scheduleId    String
   schedule      Schedule @relation(fields:[scheduleId], references:[id], onDelete: Cascade)
-  dow           Int      // 0-6  (Sun–Sat)
+  days          Int[]    // <--- CHANGED from dow: Int
   startBucket   Int      // 0-287 (5-min steps)
   bucketCount   Int      // duration / 5 mins
   zoneMask      Int      // bit-flags for zones 1-4
-  @@index([dow, startBucket])                   // fast scheduler lookup
+  @@index([startBucket]) // keep this, you can drop dow from index
 }
 
 model RunHistory {                              // audit of every ON/OFF

@@ -21,16 +21,15 @@ cron.schedule("*/5 * * * *", async () => {
 
   /* ---------- 1. ON phase ---------- */
   const onSlots = await prisma.$queryRaw`
-    SELECT ss.*, s."deviceId", ss."scheduleId",
-           d."homeBaseId", d."lanName"
-    FROM   "ScheduleSlot" ss
-    JOIN   "Schedule" s ON s.id = ss."scheduleId"
-    JOIN   "Device"   d ON d.id = s."deviceId"
-    WHERE  s.enabled         = true
-      AND  ss.dow            = ${dow}
-      AND  ss."startBucket"  <= ${bucket}
-      AND  ss."startBucket" + ss."bucketCount" > ${bucket};
-  `;
+  SELECT ss.*, s."deviceId", ss."scheduleId", d."homeBaseId", d."lanName"
+  FROM   "ScheduleSlot" ss
+  JOIN   "Schedule" s ON s.id = ss."scheduleId"
+  JOIN   "Device"   d ON d.id = s."deviceId"
+  WHERE  s.enabled = true
+    AND  ${dow} = ANY (ss.days)
+    AND  ss."startBucket" <= ${bucket}
+    AND  ss."startBucket" + ss."bucketCount" > ${bucket};
+`;
 
   console.log(`[CRON]   ON  slots: ${onSlots.length}`);
 
@@ -72,13 +71,12 @@ cron.schedule("*/5 * * * *", async () => {
 
   /* ---------- 2. OFF phase ---------- */
   const offSlots = await prisma.$queryRaw`
-    SELECT ss.*, s."deviceId", ss."scheduleId",
-           d."homeBaseId", d."lanName"
+    SELECT ss.*, s."deviceId", ss."scheduleId", d."homeBaseId", d."lanName"
     FROM   "ScheduleSlot" ss
     JOIN   "Schedule" s ON s.id = ss."scheduleId"
     JOIN   "Device"   d ON d.id = s."deviceId"
-    WHERE  s.enabled         = true
-      AND  ss.dow            = ${dow}
+    WHERE  s.enabled = true
+      AND  ${dow} = ANY (ss.days)
       AND  ss."startBucket" + ss."bucketCount" = ${bucket};
   `;
 
