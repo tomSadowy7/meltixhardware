@@ -4,7 +4,7 @@ import json
 import time
 import subprocess
 
-WEBSOCKET_URL_BASE = "ws://192.168.68.69:8081"  # Just the base, no query yet
+WEBSOCKET_URL_BASE = "ws://192.168.1.127:8081"  # Just the base, no query yet
 
 HOMEBASE_ID_FILE = "/etc/homebase-id"
 USER_TOKEN_FILE = "/etc/user-token"

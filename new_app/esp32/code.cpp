@@ -42,10 +42,20 @@ String getDeviceUUID() {
   return uuid;
 }
 
+String mdnsName() {
+  String suffix = deviceUUID.substring(0, 4);  // copy the first 4 chars
+  suffix.toLowerCase();                        // mutate in-place (returns void)
+  return "esp32-" + suffix;                    // concatenate two Strings
+}
+
 void notifyStatus(bool success) {
   if (statusChar) {
+    Serial.print("[ESP32] Sending BLE notify: ");
+    Serial.println(success ? "CONNECTED" : "FAILED");
     statusChar->setValue(success ? "CONNECTED" : "FAILED");
     statusChar->notify();
+  } else {
+    Serial.println("[ESP32] statusChar is NULL!");
   }
 }
 
@@ -78,6 +88,9 @@ class WifiCallback : public BLECharacteristicCallbacks {
 
       bool connected = WiFi.status() == WL_CONNECTED;
       Serial.println(connected ? "\nConnected!" : "\nConnection failed.");
+
+      delay(1000);
+
       notifyStatus(connected);
 
       if (connected && infoChar) {
@@ -131,10 +144,11 @@ void startServer() {
     digitalWrite(ledPins[i], LOW);
   }
 
-  if (!MDNS.begin("esp32-1")) {
-    Serial.println("Error setting up mDNS responder!");
+  /* Start mDNS with *unique* name */
+  if (!MDNS.begin(mdnsName().c_str())) {
+      Serial.println("❌ mDNS responder failed");
   } else {
-    Serial.println("mDNS responder started: esp32-1.local");
+      Serial.printf("🔎 mDNS: http://%s.local\n", mdnsName().c_str());
   }
 
   // Add routes for each LED
