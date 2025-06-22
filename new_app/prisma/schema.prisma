@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum RunSource { 
+  SCHEDULE
+  MANUAL 
+  RAIN_GUARD
+  } 
+
 model User {
   id        String     @id @default(cuid())
   email     String     @unique
@@ -46,6 +52,9 @@ model Device {
   homeBase    HomeBase @relation(fields:[homeBaseId], references:[id])
   homeBaseId  String
   sprinklerState SprinklerState?
+
+  schedules       Schedule[]   // ← inverse relation (NEW)
+
 }
 
 model SprinklerState {
@@ -56,4 +65,38 @@ model SprinklerState {
   zone2 Boolean @default(false)
   zone3 Boolean @default(false)
   zone4 Boolean @default(false)
+}  
+
+model Schedule {                                // one “program” the user toggles
+  id          String   @id @default(cuid())
+  name        String
+  enabled     Boolean  @default(true)           // on/off switch
+  rainGuard   Boolean  @default(false)          // skip when raining
+  deviceId    String
+  device      Device   @relation(fields:[deviceId], references:[id])
+  slots       ScheduleSlot[]
+  createdBy   String
+  createdAt   DateTime @default(now())
 }
+
+model ScheduleSlot {                            // a single watering window
+  id            String   @id @default(cuid())
+  scheduleId    String
+  schedule      Schedule @relation(fields:[scheduleId], references:[id], onDelete: Cascade)
+  dow           Int      // 0-6  (Sun–Sat)
+  startBucket   Int      // 0-287 (5-min steps)
+  bucketCount   Int      // duration / 5 mins
+  zoneMask      Int      // bit-flags for zones 1-4
+  @@index([dow, startBucket])                   // fast scheduler lookup
+}
+
+model RunHistory {                              // audit of every ON/OFF
+  id          String    @id @default(cuid())
+  deviceId    String
+  zoneMask    Int
+  startedAt   DateTime
+  endedAt     DateTime?
+  source      RunSource
+  scheduleId  String?
+}
+

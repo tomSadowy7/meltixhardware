@@ -140,8 +140,9 @@ router.post('/login', async (req, res) => {
 // ──────────────────────────────────────────────────────────
 router.post('/verify', async (req, res) => {
   const { email, code } = req.body;
-
+  console.log("Verify request:", { email, code });
   const user = await prisma.user.findUnique({ where: { email } });
+  console.log("Verify user:", user?.email, "code:", code);
   if (!user || user.verificationCode !== code) {
     return res.status(400).json({ error: 'Invalid verification code' });
   }

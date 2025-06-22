@@ -96,7 +96,7 @@ async def report_device(client):
     claim_device_with_backend(homebase_id, info)
 
 def claim_device_with_backend(homebase_id, device_info):
-    url = "http://192.168.68.69:3001/device/register"  # Update as needed
+    url = "http://192.168.1.127:3001/device/register"  # Update as needed
     lan_name = f"esp32-{device_info['uuid'][:4].lower()}.local" 
     payload = {
         "homeBaseId": homebase_id,

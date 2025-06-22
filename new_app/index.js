@@ -8,6 +8,8 @@ import homebaseRoutes from './routes/homebase.js';
 import authRoutes from './routes/auth.js';
 import deviceRoutes from './routes/device.js';
 import sprinklerRoutes from './routes/sprinkler.js';
+import scheduleRoutes from './routes/schedule.js';
+import './jobs/schedulerWorker.js';
 
 // --- Import both WS servers ---
 import { createPiWebSocketServer } from './websockets/ws-pi.js';
@@ -26,6 +28,7 @@ app.use('/homebase', homebaseRoutes);
 app.use('/auth', authRoutes);
 app.use('/device', deviceRoutes);
 app.use('/sprinkler', sprinklerRoutes); // Assuming sprinkler routes are in device.js
+app.use('/schedule', scheduleRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
