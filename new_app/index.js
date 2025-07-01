@@ -9,6 +9,8 @@ import authRoutes from './routes/auth.js';
 import deviceRoutes from './routes/device.js';
 import sprinklerRoutes from './routes/sprinkler.js';
 import scheduleRoutes from './routes/schedule.js';
+import accountRoutes from './routes/account.js';
+import bugReportRouter from "./routes/bugreport.js";
 import './jobs/schedulerWorker.js';
 
 // --- Import both WS servers ---
@@ -29,6 +31,8 @@ app.use('/auth', authRoutes);
 app.use('/device', deviceRoutes);
 app.use('/sprinkler', sprinklerRoutes); // Assuming sprinkler routes are in device.js
 app.use('/schedule', scheduleRoutes);
+app.use('/account', accountRoutes);
+app.use("/bugreport", bugReportRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

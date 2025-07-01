@@ -7,6 +7,7 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <esp_system.h> // for chip id
+#include "server.h" 
 
 #define RESET_PIN 0  // GPIO0 for reset-to-provisioning
 
@@ -18,8 +19,8 @@ BLECharacteristic *infoChar;
 
 String receivedSSID = "", receivedPass = "";
 bool ssidReady = false, passReady = false;
-
-const int ledPins[4] = {16, 17, 18, 19};
+// please
+const int ledPins[4] = {4, 5, 6, 7};
 
 WebServer server(80);
 const char* correctKey = "123456";
@@ -139,6 +140,7 @@ void handleLEDControl(int pin, bool turnOn) {
 }
 
 void startServer() {
+  if (deviceUUID == "") deviceUUID = getDeviceUUID();
   for (int i = 0; i < 4; ++i) {
     pinMode(ledPins[i], OUTPUT);
     digitalWrite(ledPins[i], LOW);
@@ -200,7 +202,7 @@ void startBLE() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   pinMode(RESET_PIN, INPUT_PULLUP);
 
   // Try to connect to saved Wi-Fi

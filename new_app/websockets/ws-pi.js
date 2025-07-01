@@ -7,11 +7,28 @@ export const piSockets = new Map(); // homebaseId -> ws
 
 export function notifyPiOfSprinklerCmd(homebaseId, payload) {
   const ws = piSockets.get(homebaseId);
-  if (ws && ws.readyState === ws.OPEN) {
-    ws.send(JSON.stringify({ type: "sprinklerCmd", ...payload }));
-  } else {
-    console.warn(`[WS-PI] No live socket for HB ${homebaseId}`);
-  }
+  if (!ws || ws.readyState !== ws.OPEN) return Promise.reject("No socket");
+
+  return new Promise((resolve, reject) => {
+    const msgId = Math.random().toString(36).slice(2);
+    const listener = (msg) => {
+      try {
+        const data = JSON.parse(msg);
+        if (data.type === "sprinklerAck" && data.msgId === msgId) {
+          ws.off("message", listener);
+          resolve(data.success);
+        }
+      } catch {}
+    };
+    ws.on("message", listener);
+    ws.send(JSON.stringify({ type: "sprinklerCmd", msgId, ...payload }));
+
+    // Optional timeout
+    setTimeout(() => {
+      ws.off("message", listener);
+      reject("Timeout waiting for ack from Pi");
+    }, 5000);
+  });
 }
 
 export function createPiWebSocketServer(port = 8081) {

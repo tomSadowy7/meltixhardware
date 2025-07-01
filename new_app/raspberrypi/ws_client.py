@@ -54,6 +54,7 @@ async def connect_and_run():
 
                         # ----- 2️⃣ NEW branch for sprinkler commands -----
                         elif data.get("type") == "sprinklerCmd":
+                            msg_id = data.get("msgId")
                             # expected payload the backend sends **to this Pi**
                             # {
                             #   "type": "sprinklerCmd",
@@ -75,15 +76,21 @@ async def connect_and_run():
                             # form-URL-encoded or JSON – ESP32 expects JSON body
                             import requests, json as pj
                             try:
-                                resp = requests.post(
-                                    url,
-                                    json={"key": key},
-                                    timeout=3
-                                )
-                                print("[ws_client] ESP32 replied:",
-                                      resp.status_code, resp.text)
+                                resp = requests.post(url, json={"key": key}, timeout=3)
+                                success = resp.status_code == 200
+                                result_msg = {
+                                    "type": "sprinklerAck",
+                                    "msgId": msg_id,
+                                    "success": success
+                                }
                             except requests.RequestException as e:
-                                print("[ws_client] HTTP error talking to ESP32:", e)
+                                result_msg = {
+                                    "type": "sprinklerAck",
+                                    "msgId": msg_id,
+                                    "success": False
+                                }
+
+                            await ws.send(json.dumps(result_msg))
 
                     except Exception as ex:
                         print("[ws_client] Error processing message:", ex)           

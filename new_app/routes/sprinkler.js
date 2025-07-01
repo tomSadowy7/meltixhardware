@@ -22,32 +22,43 @@ router.get("/:deviceId", authenticateToken, async (req, res) => {
 
 /* ---------- POST zone toggle ---------- */
 router.post("/:deviceId/zone/:zone", authenticateToken, async (req, res) => {
-  const zone = Number(req.params.zone);          // 1‥4
+  const zone = Number(req.params.zone);
   if (![1, 2, 3, 4].includes(zone)) {
+    console.warn(`[API] Invalid zone requested: ${zone}`);
     return res.status(400).json({ error: "Bad zone" });
   }
+
   const on = !!req.body.on;
+  const deviceId = req.params.deviceId;
+  console.log(`[API] Request to turn ${on ? "ON" : "OFF"} zone ${zone} on device ${deviceId}`);
 
-  /* 1️⃣ update DB */
-  const fields = { [`zone${zone}`]: on };
-  await prisma.sprinklerState.update({
-    where: { deviceId: req.params.deviceId },
-    data:  fields
-  });
+  const dev = await prisma.device.findUnique({ where: { id: deviceId } });
 
-  /* 2️⃣ forward to the Pi that owns this HomeBase */
-  // Here we need the device row to know lanName & homeBaseId
-  const dev = await prisma.device.findUnique({ where:{ id:req.params.deviceId } });
-  notifyPiOfSprinklerCmd(dev.homeBaseId, {
-    lanName : dev.lanName,        // "esp32-frontyard.local"
-    zone,
-    on,
-    key     : "123456"   // "123456"
-  });
+  try {
+    const success = await notifyPiOfSprinklerCmd(dev.homeBaseId, {
+      lanName: dev.lanName,
+      zone,
+      on,
+      key: "123456"
+    });
 
-  /* 3️⃣ (optional) push new state to other apps */
+    if (!success) {
+      console.warn(`[API] ESP32 did NOT confirm zone ${zone} toggle on ${dev.lanName}`);
+      throw new Error("ESP32 failed or unreachable");
+    }
 
-  res.json({ success:true });
+    const fields = { [`zone${zone}`]: on };
+    await prisma.sprinklerState.update({
+      where: { deviceId },
+      data: fields
+    });
+
+    console.log(`[API] Successfully toggled zone ${zone} ${on ? "ON" : "OFF"} and updated DB for ${deviceId}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error(`[API] Sprinkler command failed for device ${deviceId}, zone ${zone}:`, e?.message || e);
+    res.status(500).json({ error: "Sprinkler device did not respond" });
+  }
 });
 
 export default router;
