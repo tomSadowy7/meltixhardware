@@ -52,6 +52,8 @@ model Device {
   homeBase    HomeBase @relation(fields:[homeBaseId], references:[id])
   homeBaseId  String
   sprinklerState SprinklerState?
+  online      Boolean   @default(false)   // green / red dot in UI
+  lastPingAt  DateTime?                   // for debugging
 
   schedules       Schedule[]   // ← inverse relation (NEW)
 

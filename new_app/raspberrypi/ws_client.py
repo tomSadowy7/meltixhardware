@@ -3,8 +3,9 @@ import websockets
 import json
 import time
 import subprocess
+import requests
 
-WEBSOCKET_URL_BASE = "ws://192.168.1.127:8081"  # Just the base, no query yet
+WEBSOCKET_URL_BASE = "ws://192.168.68.62:8081"  # Just the base, no query yet
 
 HOMEBASE_ID_FILE = "/etc/homebase-id"
 USER_TOKEN_FILE = "/etc/user-token"
@@ -17,6 +18,16 @@ def read_file(path):
     except Exception as e:
         print(f"[ws_client] Could not read {path}: {e}")
         return None
+    
+def ping_esp32(host: str, timeout_s: int = 3) -> bool:
+    """
+    Return True iff GET http://<host>/ping answers 200 within <timeout_s>.
+    """
+    try:
+        r = requests.get(f"http://{host}/ping", timeout=timeout_s)
+        return r.status_code == 200
+    except requests.RequestException:
+        return False
 
 async def connect_and_run():
     homebase_id = read_file(HOMEBASE_ID_FILE)
@@ -91,12 +102,27 @@ async def connect_and_run():
                                 }
 
                             await ws.send(json.dumps(result_msg))
+                        elif data.get("type") == "pingEsp":
+                            # message from backend cron
+                            # { "type":"pingEsp", "lanName":"esp32-frontyard.local", "msgId":"abc123" }
+                            lan    = data["lanName"]
+                            msg_id = data.get("msgId")
+
+                            online = ping_esp32(lan)          # ←  ✅  use the helper here
+
+                            # send result back to backend
+                            await ws.send(json.dumps({
+                                "type"   : "pongEsp",
+                                "lanName": lan,
+                                "online" : online,
+                                "msgId"  : msg_id,            # echo so backend matches responses
+                            }))
 
                     except Exception as ex:
                         print("[ws_client] Error processing message:", ex)           
                           
         except Exception as e:
-            print(f"[ws_client] aaaaa Connection lost or failed: {e}")
+            print(f"[ws_client] Connection lost or failed: {e}")
             print("[ws_client] Reconnecting in 5 seconds...")
             time.sleep(5)
 

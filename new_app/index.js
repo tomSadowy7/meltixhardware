@@ -12,6 +12,7 @@ import scheduleRoutes from './routes/schedule.js';
 import accountRoutes from './routes/account.js';
 import bugReportRouter from "./routes/bugreport.js";
 import './jobs/schedulerWorker.js';
+import './jobs/pingWorker.js'; // Ensure pingWorker is imported to start the cron job
 
 // --- Import both WS servers ---
 import { createPiWebSocketServer } from './websockets/ws-pi.js';

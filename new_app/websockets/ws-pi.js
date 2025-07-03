@@ -1,8 +1,21 @@
-// routes/ws-pi.js
 import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from "@prisma/client";
 
 export const piSockets = new Map(); // homebaseId -> ws
+export const pendingPings = new Map(); // msgId -> { deviceId, expiresAt }
+export const PING_TIMEOUT_MS = 20_000;
+
+const prisma = new PrismaClient();
+
+
+export const sendToPi = (homebaseId, payload) => {
+  const ws = piSockets.get(homebaseId);
+  if (!ws || ws.readyState !== ws.OPEN) return false;
+  ws.send(JSON.stringify(payload));
+  return true;
+};
+
 
 
 export function notifyPiOfSprinklerCmd(homebaseId, payload) {
@@ -23,7 +36,6 @@ export function notifyPiOfSprinklerCmd(homebaseId, payload) {
     ws.on("message", listener);
     ws.send(JSON.stringify({ type: "sprinklerCmd", msgId, ...payload }));
 
-    // Optional timeout
     setTimeout(() => {
       ws.off("message", listener);
       reject("Timeout waiting for ack from Pi");
@@ -35,51 +47,88 @@ export function createPiWebSocketServer(port = 8081) {
   const wss = new WebSocketServer({ port });
 
   wss.on('connection', (ws, req) => {
-    // Parse token from query string (?token=...)
     const url = new URL(req.url, `ws://${req.headers.host}`);
     const token = url.searchParams.get('token');
-    if (!token) {
-      ws.close();
-      return;
-    }
-    // Validate JWT
+    if (!token) return ws.close();
+
     let userId = null;
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET);
       userId = payload.userId;
     } catch {
-      ws.close();
-      return;
+      return ws.close();
     }
 
-    ws.once('message', (msg) => {
+    ws.on('message', async (msg) => {
       let data;
-      try { data = JSON.parse(msg); } catch { ws.close(); return; }
+      try {
+        data = JSON.parse(msg);
+      } catch {
+        return ws.close(1003, "Invalid JSON");
+      }
+
       if (data.type === 'register' && data.homebaseId) {
         piSockets.set(data.homebaseId, ws);
         ws._homebaseId = data.homebaseId;
         ws._userId = userId;
         console.log(`[WebSocket] Homebase connected: ${data.homebaseId}`);
+        return;
+      }
 
-        ws.on('close', (code, reason) => {
-                  piSockets.delete(data.homebaseId);
-                  console.log(
-                    `[WS-PI] 🔌 closed homebase ${data.homebaseId} ` +
-                    `(code ${code}${reason ? `, reason: ${reason}` : ''})`
-                  );
-                });
-        ws.on('error', (err) => {
-                  piSockets.delete(data.homebaseId);
-                  console.error(`[WS-PI] ⚠️  error on ${data.homebaseId}:`, err.message);
-                });
-        // You can handle further messages here as needed
-      } else {
-        ws.close();
+      if (data.type === "pongEsp") {
+        const meta = pendingPings.get(data.msgId);
+        if (meta) {
+          pendingPings.delete(data.msgId);
+          console.log(`[PING] Received pong for device ${meta.deviceId} — ONLINE: ${data.online}`);
+
+          await prisma.device.update({
+            where: { id: meta.deviceId },
+            data : {
+              online: data.online
+            }
+          }).catch((err) => {
+            console.error(`[PING] Failed to update device ${meta.deviceId} online status:`, err);
+          });
+        } else {
+          console.warn(`[PING] Received pong with unknown msgId: ${data.msgId}`);
+        }
+        return;
+      }
+
+      // You can handle more types here if needed
+    });
+
+    ws.on('close', (code, reason) => {
+      const hbId = ws._homebaseId;
+      if (hbId) {
+        piSockets.delete(hbId);
+        console.log(`[WS-PI] 🔌 closed homebase ${hbId} (code ${code}${reason ? `, reason: ${reason}` : ''})`);
       }
     });
+
+    ws.on('error', (err) => {
+      const hbId = ws._homebaseId;
+      if (hbId) piSockets.delete(hbId);
+      console.error(`[WS-PI] ⚠️  error on ${hbId}:`, err.message);
+    });
   });
+
+  // Cleanup expired pings
+  setInterval(async () => {
+    const now = Date.now();
+    for (const [id, meta] of pendingPings) {
+      if (now > meta.expiresAt) {
+        pendingPings.delete(id);
+        await prisma.device.update({
+          where: { id: meta.deviceId },
+          data : { online: false }
+        }).catch(console.error);
+      }
+    }
+  }, 60_000);
 
   wss.on('listening', () => {
     console.log(`[WS] Pi WebSocket server listening on ws://localhost:${port}/`);
   });
 }
+
