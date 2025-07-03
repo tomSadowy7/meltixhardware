@@ -165,6 +165,9 @@ void startServer() {
 
   server.on("/led4/on", HTTP_POST, []() { handleLEDControl(ledPins[3], true); });
   server.on("/led4/off", HTTP_POST, []() { handleLEDControl(ledPins[3], false); });
+  server.on("/ping", HTTP_GET, []() {
+  server.send(200, "text/plain", "pong");
+  });
 
   server.begin();
   Serial.println("HTTP server started");
