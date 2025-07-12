@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 
 router.post("/register", async (req, res) => {
-  const { homeBaseId, deviceId, name, type, lanName } = req.body;
+  const { homeBaseId, deviceId, name, type, lanName, online } = req.body;
 
   if (!homeBaseId || !deviceId || !name || !type || !lanName) {
     return res.status(400).json({ error: 'Missing fields' });
@@ -17,13 +17,14 @@ router.post("/register", async (req, res) => {
     // Upsert device
     const device = await prisma.device.upsert({
       where:  { id: deviceId },
-      update: { name, type, homeBaseId, lanName },     // ← add here
+      update: { name, type, homeBaseId, lanName, online },     // ← add here
       create: {
         id: deviceId,
         name,
         type,
         lanName,                                       // ← and here
-        homeBase: { connect: { id: homeBaseId } }
+        homeBase: { connect: { id: homeBaseId } },
+        online
       }
     });
 
@@ -64,11 +65,12 @@ router.post("/register", async (req, res) => {
 
 // routes/device.js (add this route)
 router.get('/list', authenticateToken, async (req, res) => {
+  console.log('hit devices/list')
   try {
     // get the homebase
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      include: { homebase: { include: { devices: true } } }
+      include: { homebase: { include: { devices: true } }, }
     });
     if (!user?.homebase) {
       return res.status(404).json({ error: 'No HomeBase for user' });

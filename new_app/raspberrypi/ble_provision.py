@@ -103,7 +103,8 @@ def claim_device_with_backend(homebase_id, device_info):
         "deviceId": device_info["uuid"],
         "name": device_info.get("name", "ESP32 Device"),
         "type": device_info.get("type", "unknown"),
-        "lanName": lan_name
+        "lanName": lan_name,
+        "online": True
     }
     try:
         resp = requests.post(url, json=payload, timeout=5)
