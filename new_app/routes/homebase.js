@@ -9,8 +9,9 @@ const prisma = new PrismaClient();
 // Claim a HomeBase (user must be authenticated)
 // Claim or register a HomeBase
 router.post('/claim', authenticateToken, async (req, res) => {
-  const { homebaseId, name } = req.body;
+  const { homebaseId, name, online } = req.body;
 
+  console.log('req.body:', req.body)
 
   console.log('Hit /claim endpoint');
   if (!homebaseId) {
@@ -22,12 +23,13 @@ router.post('/claim', authenticateToken, async (req, res) => {
 
     if (!homebase) {
       // Create and assign to user
-      console.log('Creating HomeBase for userId:', req.userId);
+      console.log('Creating HomeBase for userId:', req.userId, "status:", online);
       homebase = await prisma.homeBase.create({
         data: {
           id: homebaseId,
           name: name || `HomeBase ${homebaseId.slice(-4)}`,
           userId: req.userId,
+          online: online
         },
       });
     } else {
@@ -37,6 +39,7 @@ router.post('/claim', authenticateToken, async (req, res) => {
         data: { userId: req.userId },
       });
     }
+
 
     res.json({ success: true, homeBase: homebase });
   } catch (err) {
@@ -53,7 +56,8 @@ router.get('/getname', authenticateToken, async (req, res) => {
             where: { userId: req.userId },
             select: { 
                 name: true,
-                id: true // <-- ADD THIS
+                id: true, // <-- ADD THIS
+                online: true
             }
         });
 
@@ -72,7 +76,8 @@ router.get('/getname', authenticateToken, async (req, res) => {
             success: true,
             hasHomeBase: true,
             name: homeBase.name,
-            id: homeBase.id
+            id: homeBase.id,
+            online: homeBase.online
         });
     } catch (error) {
         console.error('Error in /getname:', error);

@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 
 export const piSockets = new Map(); // homebaseId -> ws
 export const pendingPings = new Map(); // msgId -> { deviceId, expiresAt }
+export const pendingPiPings = new Map(); // msgId -> { homeBaseId, expiresAt }
 export const PING_TIMEOUT_MS = 20_000;
 
 const prisma = new PrismaClient();
@@ -79,7 +80,7 @@ export function createPiWebSocketServer(port = 8081) {
         const meta = pendingPings.get(data.msgId);
         if (meta) {
           pendingPings.delete(data.msgId);
-          console.log(`[PING] Received pong for device ${meta.deviceId} — ONLINE: ${data.online}`);
+          console.log(`[PING-ESP32] Received pong for device ${meta.deviceId} — ONLINE: ${data.online}`);
 
           await prisma.device.update({
             where: { id: meta.deviceId },
@@ -91,6 +92,27 @@ export function createPiWebSocketServer(port = 8081) {
           });
         } else {
           console.warn(`[PING] Received pong with unknown msgId: ${data.msgId}`);
+        }
+        return;
+      }
+      if (data.type === "pongPi") {
+        const hbId = ws._homebaseId;
+        if (hbId) {
+          // 🧹 cleanup ping
+          for (const [msgId, meta] of pendingPiPings.entries()) {
+            if (meta.homeBaseId === hbId) {
+              pendingPiPings.delete(msgId);
+            }
+          }
+
+          console.log(`[PING-PI] ✅ Homebase ${hbId} is ONLINE`);
+          await prisma.homeBase.update({
+            where: { id: hbId },
+            data : {
+              online     : true,
+              lastPingAt : new Date()
+            }
+          }).catch(console.error);
         }
         return;
       }
@@ -123,6 +145,20 @@ export function createPiWebSocketServer(port = 8081) {
           where: { id: meta.deviceId },
           data : { online: false }
         }).catch(console.error);
+      }
+    }
+  }, 60_000);
+
+  setInterval(async () => {
+    const now = Date.now();
+    for (const [msgId, meta] of pendingPiPings) {
+      if (now > meta.expiresAt) {
+        pendingPiPings.delete(msgId);
+        await prisma.homeBase.update({
+          where: { id: meta.homeBaseId },
+          data : { online: false }
+        }).catch(console.error);
+        console.warn(`[PING-PI] ❌ Timed out: Homebase ${meta.homeBaseId} marked OFFLINE`);
       }
     }
   }, 60_000);

@@ -41,10 +41,11 @@ router.post("/register", async (req, res) => {
 
 
     // Debug what we are about to notify
-    console.log("[/register] Notifying app of new device:", {
+    console.log("[/register] NOT UPDATED Notifying app of new device:", {
       name: device.name,
       uuid: device.id,
       deviceType: device.type,
+      online: device.online,
       homeBaseId
     });
 
@@ -52,7 +53,9 @@ router.post("/register", async (req, res) => {
     notifyAppOfProvisioning(homeBaseId, {
       name: device.name,
       uuid: device.id,
-      deviceType: device.type
+      deviceType: device.type,
+      lanName: device.lanName,     // ✅ added
+      online: device.online
     });
 
     res.json({ success: true, device });

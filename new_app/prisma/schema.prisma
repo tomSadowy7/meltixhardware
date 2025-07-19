@@ -41,7 +41,9 @@ model HomeBase {
   name     String
   user     User      @relation(fields: [userId], references: [id])
   userId   String    @unique
+  online   Boolean   @default(false)
   devices  Device[]
+  lastPingAt  DateTime?                   // for debugging
 }
 
 model Device {

@@ -4,12 +4,18 @@ import jwt from 'jsonwebtoken';
 
 export const appSockets = new Map(); // homebaseId -> ws
 
-export function notifyAppOfProvisioning(homebaseId, { name, uuid, deviceType }) {
+export function notifyAppOfProvisioning(homebaseId, { name, uuid, deviceType, lanName, online }) {
   const ws = appSockets.get(homebaseId);
   if (ws && ws.readyState === ws.OPEN) {
     ws.send(JSON.stringify({
       type: 'devicePaired',
-      device: { name, id: uuid, type: deviceType }
+      device: {
+        name,
+        id: uuid,
+        type: deviceType,
+        lanName,      // ✅ include this
+        online        // ✅ and this
+      }
     }));
   }
 }

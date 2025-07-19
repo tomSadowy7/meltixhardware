@@ -27,7 +27,7 @@ provisioning_in_progress = False
 notifications_enabled = False
 
 
-BACKEND_URL = "http://192.168.68.69:3001/homebase/claim"  # Update as needed
+BACKEND_URL = "http://192.168.68.70:3001/homebase/claim"  # Update as needed
 
 def read_homebase_id():
     try:
@@ -62,7 +62,7 @@ def claim_homebase(homebase_id, token):
     try:
         res = requests.post(
             BACKEND_URL,
-            json={"homebaseId": homebase_id},
+            json={"homebaseId": homebase_id, "online": True},
             headers={"Authorization": f"Bearer {token}"},
             timeout=5
         )

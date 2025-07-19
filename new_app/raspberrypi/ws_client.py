@@ -5,7 +5,7 @@ import time
 import subprocess
 import requests
 
-WEBSOCKET_URL_BASE = "ws://192.168.68.62:8081"  # Just the base, no query yet
+WEBSOCKET_URL_BASE = "ws://192.168.1.114:8081"  # Just the base, no query yet
 
 HOMEBASE_ID_FILE = "/etc/homebase-id"
 USER_TOKEN_FILE = "/etc/user-token"
@@ -116,6 +116,11 @@ async def connect_and_run():
                                 "lanName": lan,
                                 "online" : online,
                                 "msgId"  : msg_id,            # echo so backend matches responses
+                            }))
+                        elif data.get("type") == "pingPi":
+                            await ws.send(json.dumps({
+                                "type": "pongPi",
+                                "msgId": data.get("msgId")
                             }))
 
                     except Exception as ex:
