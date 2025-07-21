@@ -5,10 +5,10 @@ import time
 import subprocess
 import requests
 
-WEBSOCKET_URL_BASE = "ws://192.168.1.114:8081"  # Just the base, no query yet
+WEBSOCKET_URL_BASE = "ws://35.223.147.76:8081"  # Just the base, no query yet
 
 HOMEBASE_ID_FILE = "/etc/homebase-id"
-USER_TOKEN_FILE = "/etc/user-token"
+HOMEBASE_TOKEN_FILE = "/etc/homebase-token"
 
 
 def read_file(path):
@@ -31,12 +31,13 @@ def ping_esp32(host: str, timeout_s: int = 3) -> bool:
 
 async def connect_and_run():
     homebase_id = read_file(HOMEBASE_ID_FILE)
-    user_token = read_file(USER_TOKEN_FILE)
-    if not homebase_id or not user_token:
-        print("[ws_client] Missing homebase ID or user token. Exiting.")
+    homebase_token = read_file(HOMEBASE_TOKEN_FILE)
+    if not homebase_id or not homebase_token:
+        print("[ws_client] Missing homebase ID or homebase token. Exiting.")
         return
 
-    ws_url = f"{WEBSOCKET_URL_BASE}?token={user_token}"
+    #ws_url = f"{WEBSOCKET_URL_BASE}?token={homebase_token}"
+    ws_url = f"{WEBSOCKET_URL_BASE}?token={homebase_token}"
 
     while True:
         try:

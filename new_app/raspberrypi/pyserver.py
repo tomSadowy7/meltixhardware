@@ -27,7 +27,7 @@ provisioning_in_progress = False
 notifications_enabled = False
 
 
-BACKEND_URL = "http://192.168.68.70:3001/homebase/claim"  # Update as needed
+BACKEND_URL = "http://35.223.147.76:3001/homebase/claim"  # Update as needed
 
 def read_homebase_id():
     try:
@@ -68,6 +68,13 @@ def claim_homebase(homebase_id, token):
         )
         if res.status_code == 200:
             print("✅ HomeBase claimed")
+            try:
+                with open('/etc/homebase-token', 'w') as f:
+                    data = res.json()
+                    print(data)
+                    f.write(data["homeBase"]["homebaseToken"])
+            except Exception as e:
+                print(f"Failed to save to homebase credentials: {e}")
             return True
         else:
             print(f"❌ Claim failed: {res.status_code} {res.text}")
@@ -158,14 +165,6 @@ def password_write_callback(value, options):
 def token_write_callback(value, options):
     global user_token
     user_token = bytes(value).decode('utf-8')
-    print("Received User Token:", user_token)
-    # Save user token to persistent file
-    try:
-        with open('/etc/user-token', 'w') as f:
-            f.write(user_token)
-        print("User token saved to /etc/user-token")
-    except Exception as e:
-        print(f"Failed to save user token: {e}")
     maybe_try_connect()
 
 
@@ -181,6 +180,7 @@ def notify_callback(notifying, characteristic):
 
 
 def main(adapter_address):
+    #subprocess.run(['bluetoothctl', 'pairable', 'off'], check=False, shell=True)
     global status_characteristic, homebase_id_characteristic, homebase_id
     homebase_id = read_homebase_id()
 
